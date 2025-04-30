@@ -1,0 +1,7 @@
+package org.lib.bankcardmanagementsystem.repository;
+
+import org.lib.bankcardmanagementsystem.entity.Card;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface CardRepository extends JpaRepository<Card, Long> {
+}
