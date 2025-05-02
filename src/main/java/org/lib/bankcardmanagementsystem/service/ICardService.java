@@ -14,4 +14,5 @@ public interface ICardService {
     Card activateCard(Card card);
     BigDecimal getBalance(Card card);
     BigDecimal moneyTransferCard(Card card, BigDecimal amount);
+    String generateCardNumber();
 }

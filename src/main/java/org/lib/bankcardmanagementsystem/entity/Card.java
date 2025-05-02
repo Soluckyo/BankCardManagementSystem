@@ -31,7 +31,7 @@ public class Card {
 
     private String encryptedCardNumber;
 
-    private String maskedCurdNumber;
+    private String maskedCardNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User ownerUser;
