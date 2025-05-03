@@ -10,9 +10,8 @@ import java.math.BigDecimal;
 public interface ICardService {
     Page<Card> getAllCards(Pageable pageable);
     Card createCard(CardCreateDTO createDTO);
-    Card blockedCard(Card card);
-    Card activateCard(Card card);
-    BigDecimal getBalance(Card card);
-    BigDecimal moneyTransferCard(Card card, BigDecimal amount);
-    String generateCardNumber();
+    String blockedCard(Long cardId);
+    String activateCard(Long cardId);
+    BigDecimal getBalance(Long cardId);
+    BigDecimal moneyTransferCard(Long cardIdSender, Long cardIdRecipient, BigDecimal amount);
 }

@@ -1,9 +1,10 @@
 package org.lib.bankcardmanagementsystem.service;
 
+import jakarta.transaction.Transactional;
 import org.lib.bankcardmanagementsystem.dto.CardCreateDTO;
 import org.lib.bankcardmanagementsystem.entity.Card;
+import org.lib.bankcardmanagementsystem.entity.Status;
 import org.lib.bankcardmanagementsystem.exception.CardNotFoundException;
-import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
 import org.lib.bankcardmanagementsystem.repository.CardRepository;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,20 +13,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Random;
+import java.time.LocalDate;
 
 @Service
 public class CardService implements ICardService {
 
+    @Value("${card.expiry.year}")
+    private Long EXPIRY_YEARS;
+
+    @Value("${card.start.balance}")
+    private BigDecimal START_BALANCE;
+
     private final CardRepository cardRepository;
-    private final UserRepository userRepository;
+    private final CardNumberGenerator cardNumberGenerator;
+    private final UserService userService;
 
-    @Value("${card.bin}")
-    private String BIN;
-
-    public CardService(CardRepository cardRepository, UserRepository userRepository) {
+    public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator, UserService userService) {
         this.cardRepository = cardRepository;
-        this.userRepository = userRepository;
+        this.cardNumberGenerator = cardNumberGenerator;
+        this.userService = userService;
     }
 
     public Page<Card> getAllCards(Pageable pageable) {
@@ -35,66 +41,56 @@ public class CardService implements ICardService {
         return cardRepository.findAll(pageable);
     }
 
+    //метод создает новую карту с изначальным балансом в 10.00 и сроком годности 4 года
+    @Transactional
     public Card createCard(CardCreateDTO createDTO) {
         if(createDTO == null) {
             return null;
         }
+
+        String numberCard = cardNumberGenerator.generateCardNumber();
+        String encryptNumberCard = cardNumberGenerator.encryptCardNumber(numberCard);
+        String maskedNumberCard = cardNumberGenerator.maskCardNumber(numberCard);
+
         Card card = Card.builder()
-                .encryptedCardNumber()
-                .maskedCardNumber()
-                //TODO: убрать метод в userService
-                .ownerUser(userRepository.findById(createDTO.getOwnerId())
-                        .orElseThrow(() -> new UserNotFoundException("Такой пользователь не найден!")))
-                .expiryDate()
-                .status()
-                .balance()
+                .encryptedCardNumber(encryptNumberCard)
+                .maskedCardNumber(maskedNumberCard)
+                .ownerUser(userService.getUserById(createDTO.getOwnerId()))
+                .expiryDate(LocalDate.now().plusYears(EXPIRY_YEARS))
+                .status(Status.ACTIVE)
+                .balance(START_BALANCE)
                 .build();
 
         return cardRepository.save(card);
     }
 
-    public String encryptCardNumber(String cardNumber) {
-
+    public String blockedCard(Long cardId) {
+        Card card = cardRepository.findById(cardId).orElseThrow(
+                () -> new CardNotFoundException("Карта не найдена")
+        );
+        card.setStatus(Status.BLOCKED);
+        cardRepository.save(card);
+        return "Карта успешно заблокирована";
     }
 
-    public String generateCardNumber() {
-        StringBuilder cardNumber = new StringBuilder(BIN);
-        for(int i = 0; i < 9; i++) {
-            cardNumber.append((int) (Math.random() * 10));
-        }
-        int checkDigit = getLuhnCheckDigit(cardNumber.toString());
-        cardNumber.append(checkDigit);
-        return cardNumber.toString();
+    public String activateCard(Long cardId) {
+        Card card = cardRepository.findById(cardId).orElseThrow(
+                () -> new CardNotFoundException("Карта не найдена")
+        );
+        card.setStatus(Status.ACTIVE);
+        cardRepository.save(card);
+        return "Карта успешно разблокирована";
     }
 
-    private int getLuhnCheckDigit(String number) {
-        int sum = 0;
-        for(int i = 0; i < number.length(); i++) {
-            int digit = Character.getNumericValue(number.charAt(number.length() - 1 - i));
-            if(digit % 2 == 0){
-                digit = digit * 2;
-                if(digit > 9){
-                    digit = digit - 9;
-                }
-            }
-            sum = sum + digit;
-        }
-        return (10 - (sum % 10)) % 10;
+    public BigDecimal getBalance(Long cardId) {
+        Card card = cardRepository.findById(cardId).orElseThrow(
+                () -> new CardNotFoundException("Карта не найдена")
+        );
+        return card.getBalance();
     }
 
-    public Card blockedCard(Card card) {
-        return null;
-    }
-
-    public Card activateCard(Card card) {
-        return null;
-    }
-
-    public BigDecimal getBalance(Card card) {
-        return null;
-    }
-
-    public BigDecimal moneyTransferCard(Card card, BigDecimal amount) {
+    @Transactional
+    public BigDecimal moneyTransferCard(Long cardIdSender, Long cardIdRecipient, BigDecimal amount) {
         return null;
     }
 }
