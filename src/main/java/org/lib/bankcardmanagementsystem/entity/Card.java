@@ -17,6 +17,11 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Представляет банковскую карту пользователя.
+ * Связана с пользователем через поле {@link #ownerUser}.
+ * Номер карты уникален и генерируется по алгоритму Луна. Не хранится в незашифрованном виде!
+ */
 @Entity
 @Getter
 @Setter
@@ -25,21 +30,42 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class Card {
 
+    /**
+     * ID карты.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCard;
 
+    /**
+     * Зашифрованный номер карты
+     */
     private String encryptedCardNumber;
 
+    /**
+     * Маска номера карты
+     */
     private String maskedCardNumber;
 
+    /**
+     * Владелец карты.
+     */
     @ManyToOne(fetch = FetchType.LAZY)
     private User ownerUser;
 
+    /**
+     * Срок действия карты.
+     */
     private LocalDate expiryDate;
 
+    /**
+     * Статус карты.
+     */
     @Enumerated(value = EnumType.STRING)
     private Status status;
 
+    /**
+     * Баланс карты
+     */
     private BigDecimal balance;
 }

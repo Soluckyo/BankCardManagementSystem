@@ -1,0 +1,68 @@
+package org.lib.bankcardmanagementsystem.service;
+
+import org.lib.bankcardmanagementsystem.dto.RegisterRequestDto;
+import org.lib.bankcardmanagementsystem.dto.TokenRequestDto;
+import org.lib.bankcardmanagementsystem.dto.TokenResponseDto;
+import org.lib.bankcardmanagementsystem.entity.User;
+import org.lib.bankcardmanagementsystem.exception.EmailAlreadyExistsException;
+import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
+import org.lib.bankcardmanagementsystem.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import javax.naming.AuthenticationException;
+
+@Service
+public class AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final IJwtService jwtService;
+
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, IJwtService jwtService) {
+        this.userRepository = userRepository;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    public void register(RegisterRequestDto request) {
+        if (userRepository.existsByEmail(request.getEmail())){
+            throw new EmailAlreadyExistsException("Такой Email уже используется");
+        }
+
+        User user = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(request.getRole())
+                .build();
+
+        userRepository.save(user);
+    }
+
+    public TokenResponseDto refreshAccessToken(String refreshToken) throws AuthenticationException {
+        if(refreshToken != null && jwtService.validateToken(refreshToken)){
+            User user = findByEmail(jwtService.getEmailFromToken(refreshToken));
+            return jwtService.refreshAccessToken(user, refreshToken);
+        }else {
+            throw new AuthenticationException("Невалидный refresh токен");
+        }
+    }
+
+    public TokenResponseDto signIn(TokenRequestDto tokenRequestDto){
+        User user = findByCredentials(tokenRequestDto);
+        return jwtService.generateTokenResponse(user);
+    }
+
+    private User findByCredentials(TokenRequestDto tokenRequestDto){
+        User user = findByEmail(tokenRequestDto.getEmail());
+        if(passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())) {
+            return user;
+        }
+        return null;
+    }
+
+    private User findByEmail(String email){
+        return userRepository.findByEmail(email).orElseThrow(
+                ()-> new UserNotFoundException(String.format("Пользователь с Email %s не найден", email)));
+    }
+}

@@ -7,6 +7,9 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
+/**
+ * Класс для генерации шифрования и создания маски номера карты
+ */
 @Component
 public class CardNumberGenerator {
 
@@ -19,7 +22,12 @@ public class CardNumberGenerator {
     @Value("${card.secret.algorithm}")
     private String ALGORITHM;
 
-    //метод генерирует номер карты в соответствии со стандартом по алгоритму Luhn
+    /**
+     * Генерирует номер карты, соответствующий алгоритму Луна.
+     * BIN задаётся как префикс, к которому добавляются случайные цифры и контрольная сумма.
+     *
+     * @return строка с валидным номером карты
+     */
     public String generateCardNumber() {
         StringBuilder cardNumber = new StringBuilder(BIN);
         for(int i = 0; i < 9; i++) {
@@ -30,7 +38,12 @@ public class CardNumberGenerator {
         return cardNumber.toString();
     }
 
-    //метод генерирует последнюю цифру для номера карты с помощью алгоритма Luhn
+    /**
+     * Метод генерирует последнюю цифру для номера карты с помощью алгоритма Luhn
+     *
+     * @param number строка, представляющая номер карты без контрольной цифры
+     * @return последняя цифра для номера карты
+     */
     private int getLuhnCheckDigit(String number) {
         int sum = 0;
         for(int i = 0; i < number.length(); i++) {
@@ -46,24 +59,36 @@ public class CardNumberGenerator {
         return (10 - (sum % 10)) % 10;
     }
 
-    //шифрование номера карты(безопасность)
-    public String encryptCardNumber(String encryptNumber) {
+    /**
+     * Метод шифрует номер карты.
+     * Использует алгоритм ALGORITHM и ключ SECRET_KEY
+     *
+     * @param cardNumber строка, представляющая собой незашифрованный номер карты
+     * @return зашифрованный номер карты
+     * @throws RuntimeException выбрасывается в случае ошибки шифрования карты
+     */
+    public String encryptedNumberCard(String cardNumber) {
         try{
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             SecretKeySpec key = new SecretKeySpec(SECRET_KEY.getBytes(), ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, key);
-            byte[] encrypted = cipher.doFinal(encryptNumber.getBytes());
+            byte[] encrypted = cipher.doFinal(cardNumber.getBytes());
             return Base64.getEncoder().encodeToString(encrypted);
         }catch(Exception e){
             throw new RuntimeException("Ошибка при шифровании карты!", e);
         }
     }
 
-    //создание маски номера карты(безопасность)
-    public String maskCardNumber(String maskedNumber) {
-        if(maskedNumber == null || maskedNumber.length() < 4){
+    /**
+     * Метод создает маску номера карты.
+     *
+     * @param cardNumber строка, представляющая собой незашифрованный номер карты
+     * @return строка с маской номера карты
+     */
+    public String maskedNumberCard(String cardNumber) {
+        if(cardNumber == null || cardNumber.length() < 4){
             return "****";
         }
-        return "**** **** **** " + maskedNumber.substring(maskedNumber.length() - 4);
+        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
     }
 }

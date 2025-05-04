@@ -1,10 +1,22 @@
 package org.lib.bankcardmanagementsystem.service;
 
+import org.lib.bankcardmanagementsystem.dto.RegisterRequestDto;
+import org.lib.bankcardmanagementsystem.dto.TokenRequestDto;
+import org.lib.bankcardmanagementsystem.dto.TokenResponseDto;
 import org.lib.bankcardmanagementsystem.entity.User;
+import org.lib.bankcardmanagementsystem.exception.EmailAlreadyExistsException;
 import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.naming.AuthenticationException;
+import java.util.Optional;
+
+
+/**
+ * Сервис для работы с пользователями
+ */
 @Service
 public class UserService implements IUserService {
 
@@ -14,8 +26,16 @@ public class UserService implements IUserService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Метод возвращает пользователя по ID
+     *
+     * @return пользователь с заданным ID
+     * @param userId числовое значение представляющее собой ID пользователя
+     * @throws UserNotFoundException выбрасывается, если пользователь с таким ID не найден
+     */
     public User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Такой пользователь не найден!"));
     }
+
 }
