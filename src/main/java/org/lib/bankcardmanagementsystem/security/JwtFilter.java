@@ -17,6 +17,14 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Фильтр JWT, обрабатывающий каждый входящий HTTP-запрос один раз.
+ * Проверяет наличие и валидность JWT-токена в заголовке Authorization.
+ * При успешной валидации извлекает email и роль пользователя из токена
+ * и устанавливает их в {@link org.springframework.security.core.context.SecurityContextHolder}.
+ * <p>
+ * В случае недействительного или просроченного токена возвращает HTTP 401 Unauthorized.
+ */
 @Slf4j
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -26,6 +34,16 @@ public class JwtFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
     }
 
+    /**
+     * Основная логика фильтрации. Проверяет наличие и валидность токена,
+     * при успешной проверке сохраняет данные пользователя в SecurityContext.
+     *
+     * @param request     входящий HTTP-запрос
+     * @param response    HTTP-ответ
+     * @param filterChain цепочка фильтров
+     * @throws ServletException в случае ошибки фильтрации
+     * @throws IOException      в случае ошибки ввода/вывода
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = getTokenFromRequest(request);
@@ -34,10 +52,18 @@ public class JwtFilter extends OncePerRequestFilter {
                 setCustomUserDetailsToSecurityContextHolder(token);
             }else{
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
+                return;
             }
         }
+        filterChain.doFilter(request, response);
     }
 
+    /**
+     * Устанавливает email и роль пользователя, извлечённые из токена,
+     * в {@link SecurityContextHolder} в виде аутентификации.
+     *
+     * @param token валидный JWT-токен
+     */
     private void setCustomUserDetailsToSecurityContextHolder(String token) {
         String email = jwtService.getEmailFromToken(token);
         String role = jwtService.getRoleFromToken(token);
@@ -51,6 +77,13 @@ public class JwtFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
+    /**
+     * Извлекает JWT-токен из заголовка Authorization.
+     * Ожидается формат: "Bearer &lt;token&gt;".
+     *
+     * @param request HTTP-запрос
+     * @return строка токена или null, если токен отсутствует или некорректный
+     */
     private String getTokenFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {

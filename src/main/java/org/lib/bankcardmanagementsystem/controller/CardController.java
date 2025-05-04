@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.lib.bankcardmanagementsystem.dto.CardDto;
 import org.lib.bankcardmanagementsystem.dto.MoneyTransferDto;
 import org.lib.bankcardmanagementsystem.entity.Card;
-import org.lib.bankcardmanagementsystem.repository.CardRepository;
 import org.lib.bankcardmanagementsystem.service.ICardService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

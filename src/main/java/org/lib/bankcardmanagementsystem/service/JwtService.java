@@ -26,12 +26,24 @@ import java.util.Date;
 @Slf4j
 public class JwtService implements IJwtService{
 
+    /**
+     * Секретный ключ.
+     * Значение загружается из application.properties по ключу `jwt.secret.key`.
+     */
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
 
+    /**
+     * Время жизни токена доступа.
+     * Значение загружается из application.properties по ключу `jwt.token.access.expiration.minutes`.
+     */
     @Value("${jwt.token.access.expiration.minutes}")
     private Long ACCESS_TOKEN_EXPIRATION_MINUTES;
 
+    /**
+     * Время жизни токена обновления.
+     * Значение загружается из application.properties по ключу `jwt.token.refresh.expiration.days`.
+     */
     @Value("${jwt.token.refresh.expiration.days}")
     private Long REFRESH_TOKEN_EXPIRATION_DAYS;
 

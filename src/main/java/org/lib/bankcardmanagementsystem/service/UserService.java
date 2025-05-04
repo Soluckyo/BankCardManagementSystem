@@ -1,17 +1,9 @@
 package org.lib.bankcardmanagementsystem.service;
 
-import org.lib.bankcardmanagementsystem.dto.RegisterRequestDto;
-import org.lib.bankcardmanagementsystem.dto.TokenRequestDto;
-import org.lib.bankcardmanagementsystem.dto.TokenResponseDto;
 import org.lib.bankcardmanagementsystem.entity.User;
-import org.lib.bankcardmanagementsystem.exception.EmailAlreadyExistsException;
 import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import javax.naming.AuthenticationException;
-import java.util.Optional;
 
 
 /**

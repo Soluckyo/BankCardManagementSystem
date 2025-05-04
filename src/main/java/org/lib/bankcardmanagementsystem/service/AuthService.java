@@ -7,6 +7,7 @@ import org.lib.bankcardmanagementsystem.entity.User;
 import org.lib.bankcardmanagementsystem.exception.EmailAlreadyExistsException;
 import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,12 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Сохраняет пользователя в базу данных
+     *
+     * @param request DTO, содержащее в себе email, password, role
+     * @throws EmailAlreadyExistsException выбрасывается, если email уже используется
+     */
     public void register(RegisterRequestDto request) {
         if (userRepository.existsByEmail(request.getEmail())){
             throw new EmailAlreadyExistsException("Такой Email уже используется");
@@ -39,6 +46,13 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    /**
+     * Обновляет токен доступа
+     *
+     * @param refreshToken токен обновления
+     * @return TokenResponseDto, содержащий токены
+     * @throws AuthenticationException выбрасывается при невалидном токене
+     */
     public TokenResponseDto refreshAccessToken(String refreshToken) throws AuthenticationException {
         if(refreshToken != null && jwtService.validateToken(refreshToken)){
             User user = findByEmail(jwtService.getEmailFromToken(refreshToken));
@@ -48,19 +62,40 @@ public class AuthService {
         }
     }
 
+    /**
+     * Выдает токены доступа и обновления
+     *
+     * @param tokenRequestDto запрос с учетными данными
+     * @return TokenResponseDto, содержащий токены
+     */
     public TokenResponseDto signIn(TokenRequestDto tokenRequestDto){
         User user = findByCredentials(tokenRequestDto);
         return jwtService.generateTokenResponse(user);
     }
 
+    /**
+     * Проверяет валидность учетных данных
+     *
+     * @param tokenRequestDto запрос с учетными данными
+     * @return пользователя или в слу
+     * @throws BadCredentialsException выбрасывается, если пароль не валидируется с сохраненным паролем
+     */
     private User findByCredentials(TokenRequestDto tokenRequestDto){
         User user = findByEmail(tokenRequestDto.getEmail());
-        if(passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())) {
+        if(!passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Невалидный пароль");
+        }else {
             return user;
         }
-        return null;
     }
 
+    /**
+     * Возвращает пользователя по email
+     *
+     * @param email почта пользователя
+     * @return пользователь
+     * @throws UserNotFoundException выбрасывается, если пользователь не найден
+     */
     private User findByEmail(String email){
         return userRepository.findByEmail(email).orElseThrow(
                 ()-> new UserNotFoundException(String.format("Пользователь с Email %s не найден", email)));

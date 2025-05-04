@@ -35,7 +35,7 @@ public class CardService implements ICardService {
      *  Значение загружается из application.properties по ключу `card.expiry.year`.
      */
     @Value("${card.expiry.year}")
-    private Long EXPIRY_YEAR;
+    private Long CARD_EXPIRY_YEAR;
 
     /**
      *  Стартовый баланс карты при создании
@@ -103,7 +103,7 @@ public class CardService implements ICardService {
     }
 
     /**
-     * Создает новую карту с стартовым балансом START_BALANCE и сроком годности EXPIRY_YEARS
+     * Создает новую карту с стартовым балансом START_BALANCE и сроком годности CARD_EXPIRY_YEARS
      *
      * @param userId ID пользователя
      * @return CardDto DTO, содержащий в себе строку maskedCardNumber маску карты,
@@ -124,7 +124,7 @@ public class CardService implements ICardService {
                     .encryptedCardNumber(encryptNumberCard)
                     .maskedCardNumber(maskedNumberCard)
                     .ownerUser(user)
-                    .expiryDate(LocalDate.now().plusYears(EXPIRY_YEAR))
+                    .expiryDate(LocalDate.now().plusYears(CARD_EXPIRY_YEAR))
                     .status(Status.ACTIVE)
                     .balance(START_BALANCE)
                     .build();
