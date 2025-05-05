@@ -78,7 +78,7 @@ public class CardService implements ICardService {
 
     /**
      * Возвращает все карты, принадлежащие одному пользователю.
-     * Метод может работать с параметризированной фильтрацией
+     * Метод может работать с параметризованной фильтрацией
      *
      * @param pageable параметры страницы
      * @throws CardNotFoundException выбрасывается, если карты не найдены
@@ -168,6 +168,20 @@ public class CardService implements ICardService {
             e.printStackTrace();
             throw new CardCreationException("Ошибка при создании карты");
         }
+    }
+
+    /**
+     * Удаляет карту по её ID. Только для администратора.
+     *
+     * @param cardId ID карты
+     * @throws CardNotFoundException выбрасывается, если карта не найдена
+     * @throws AccessDeniedException выбрасывается, если пользователь не имеет доступа
+     */
+    public void deleteCardById(Long cardId) {
+        Card card = cardRepository.findById(cardId)
+                .orElseThrow(() -> new CardNotFoundException("Карта с ID " + cardId + " не найдена"));
+
+        cardRepository.delete(card);
     }
 
     /**

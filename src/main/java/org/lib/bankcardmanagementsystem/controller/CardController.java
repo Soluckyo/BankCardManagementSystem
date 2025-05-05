@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -90,6 +91,23 @@ public class CardController {
     @PostMapping("/{ownerId}/create-card")
     public ResponseEntity<CardDto> createCard(@PathVariable Long ownerId) {
         return ResponseEntity.ok(cardService.createCard(ownerId));
+    }
+
+    @Operation(
+            summary = "Удаление карты по ID",
+            description = "Удаляет карту по ID. Доступно только для администратора!."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Карта успешно удалена"),
+            @ApiResponse(responseCode = "404", description = "Карта не найдена"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещён"),
+            @ApiResponse(responseCode = "401", description = "Токен отсутствует или недействителен")
+    })
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/delete/{cardId}")
+    public ResponseEntity<String> deleteCardById(@PathVariable Long cardId) {
+        cardService.deleteCardById(cardId);
+        return ResponseEntity.ok("Карта успешно удалена");
     }
 
     @ApiResponses(value = {

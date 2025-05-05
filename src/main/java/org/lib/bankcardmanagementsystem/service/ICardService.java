@@ -12,6 +12,7 @@ public interface ICardService {
     Page<CardDto> getAllCards(Pageable pageable);
     Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable, BigDecimal minBalance, Status status);
     CardDto createCard(Long userId);
+    void deleteCardById(Long cardId);
     CardDto blockedCard(Long cardId);
     CardDto activateCard(Long cardId);
     BigDecimal getBalance(Long cardId);
