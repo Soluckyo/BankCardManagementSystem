@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.naming.AuthenticationException;
 
 @Service
-public class AuthService {
+public class AuthService implements IAuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.lib.bankcardmanagementsystem.dto.CardDto;
 import org.lib.bankcardmanagementsystem.dto.MoneyTransferDto;
+import org.lib.bankcardmanagementsystem.entity.Status;
 import org.lib.bankcardmanagementsystem.service.ICardService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -64,11 +65,15 @@ public class CardController {
     )
     @GetMapping("/all")
     public ResponseEntity<Page<CardDto>> getAllCardsByOwnerId(
-            @RequestHeader String authHeader,
+            @RequestHeader("Authorization") String authHeader,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) BigDecimal minBalance,
+            @RequestParam(required = false) Status status
+
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok().body(cardService.getAllCardsByOwnerId(authHeader, pageable));
+        return ResponseEntity.ok().body(cardService.getAllCardsByOwnerId(authHeader, pageable, minBalance, status));
     }
 
     @ApiResponses(value = {
@@ -111,7 +116,7 @@ public class CardController {
             description = "Принимает ID карты и ставит флаг запроса блокировки true"
     )
     @PostMapping("/{cardId}/block-request")
-    public ResponseEntity<String> responseForBlockedCard(@RequestHeader String authHeader, Long cardId) {
+    public ResponseEntity<String> responseForBlockedCard(@RequestHeader("Authorization") String authHeader, Long cardId) {
         return ResponseEntity.ok(cardService.requestForBlockCard(authHeader, cardId));
     }
 

@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import org.lib.bankcardmanagementsystem.dto.CardDto;
 import org.lib.bankcardmanagementsystem.dto.MoneyTransferDto;
 import org.lib.bankcardmanagementsystem.entity.Card;
+import org.lib.bankcardmanagementsystem.entity.CardSpecification;
 import org.lib.bankcardmanagementsystem.entity.Status;
 import org.lib.bankcardmanagementsystem.entity.User;
 import org.lib.bankcardmanagementsystem.exception.BalanceIsNotEnoughException;
@@ -21,6 +22,7 @@ import org.lib.bankcardmanagementsystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -71,31 +73,30 @@ public class CardService implements ICardService {
      */
     public Page<CardDto> getAllCards(Pageable pageable) {
         Page<Card> cards = cardRepository.findAll(pageable);
-        if(cards.isEmpty()) {
-            throw new CardNotFoundException("Карты не найдены");
-        }
         return cards.map(CardMapper::toCardDto);
     }
 
     /**
      * Возвращает все карты, принадлежащие одному пользователю.
+     * Метод может работать с параметризированной фильтрацией
      *
      * @param pageable параметры страницы
      * @throws CardNotFoundException выбрасывается, если карты не найдены
      * @return страница с картами
      */
-    public Page<CardDto> getAllCardsByOwnerId(String AuthHeader, Pageable pageable) {
-        String email = extractUserInfoFromToken(AuthHeader);
+    public Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable, BigDecimal minBalance, Status status) {
+        String email = extractUserInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
 
-        Page<Card> cards = cardRepository.findAllByOwnerUser_IdUser(user.getIdUser() ,pageable);
+        Specification<Card> spec = Specification
+                .where(CardSpecification.hasOwnerId(user.getIdUser()))
+                .and(CardSpecification.hasStatus(status))
+                .and(CardSpecification.hasMinBalance(minBalance));
 
-        if(cards.isEmpty()) {
-            throw new CardNotFoundException("Карты не найдены");
-        }
-
+        Page<Card> cards = cardRepository.findAll(spec, pageable);
         return cards.map(CardMapper::toCardDto);
     }
+
 
     /**
      * Берет токен из заголовка, достает из токена email и возвращает его
@@ -113,7 +114,7 @@ public class CardService implements ICardService {
 
         String token = authHeader.substring(7);
 
-        if(jwtService.validateToken(token)) {
+        if(!jwtService.validateToken(token)) {
             throw new InvalidAccessTokenException("Недействительный или просроченный токен");
         }
 

@@ -7,7 +7,7 @@ import org.lib.bankcardmanagementsystem.dto.RefreshTokenDTO;
 import org.lib.bankcardmanagementsystem.dto.RegisterRequestDto;
 import org.lib.bankcardmanagementsystem.dto.TokenRequestDto;
 import org.lib.bankcardmanagementsystem.dto.TokenResponseDto;
-import org.lib.bankcardmanagementsystem.service.AuthService;
+import org.lib.bankcardmanagementsystem.service.IAuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "auth_controller")
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(IAuthService authService) {
         this.authService = authService;
     }
 
