@@ -1,5 +1,7 @@
 package org.lib.bankcardmanagementsystem.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,12 +50,23 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = getTokenFromRequest(request);
         if (token != null) {
-            if(jwtService.validateToken(token)) {
+            try {
+                jwtService.validateToken(token);
                 setCustomUserDetailsToSecurityContextHolder(token);
-            }else{
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT token");
+            } catch (ExpiredJwtException e) {
+                log.warn("JWT token expired: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"JWT token expired\"}");
+                return;
+            } catch (JwtException e) {
+                log.warn("Invalid JWT token: {}", e.getMessage());
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Invalid JWT token\"}");
                 return;
             }
+
         }
         filterChain.doFilter(request, response);
     }

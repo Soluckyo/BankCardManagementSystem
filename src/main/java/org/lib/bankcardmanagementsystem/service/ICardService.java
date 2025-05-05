@@ -15,8 +15,8 @@ public interface ICardService {
     void deleteCardById(Long cardId);
     CardDto blockedCard(Long cardId);
     CardDto activateCard(Long cardId);
-    BigDecimal getBalance(Long cardId);
-    BigDecimal transferMoney(MoneyTransferDto moneyTransferDTO);
+    BigDecimal getBalance(String authHeader, Long cardId);
+    BigDecimal transferMoney(String authHeader, MoneyTransferDto moneyTransferDTO);
     String requestForBlockCard(String authHeader, Long cardId);
     Page<CardDto> findRequestCardBlock(Pageable pageable);
 }

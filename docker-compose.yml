@@ -1,0 +1,30 @@
+services:
+  bcms-backend:
+    build: .
+    image: bcms-backend
+    container_name: bcms-backend
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - bcms-postgres
+    environment:
+      SPRING_DATASOURCE_URL: 'jdbc:postgresql://bcms-postgres:5432/BankCardManagementSystem'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: always
+
+
+  bcms-postgres:
+    image: postgres
+    container_name: bcms-postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=BankCardManagementSystem
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    restart: always

@@ -93,27 +93,9 @@ public class JwtService implements IJwtService{
      *         false, если токен невалидный
      */
     public Boolean validateToken(String token) {
-        try {
-            log.debug("Trying to validate token: {}", token);
-            claimsToken(token);
-            log.debug("Trying to validate token: {}", token);
-            return true;
-        }catch (ExpiredJwtException expEx) {
-            log.error("Token expired", expEx);
-            return false;
-        } catch (UnsupportedJwtException unsEx) {
-            log.error("Unsupported jwt", unsEx);
-            return false;
-        } catch (MalformedJwtException mjEx) {
-            log.error("Malformed jwt", mjEx);
-            return false;
-        } catch (SignatureException sEx) {
-            log.error("Invalid signature", sEx);
-            return false;
-        } catch (Exception e) {
-            log.error("Invalid token", e);
-            return false;
-        }
+        claimsToken(token);
+        log.debug("Trying to validate token: {}", token);
+        return true;
     }
 
     /**

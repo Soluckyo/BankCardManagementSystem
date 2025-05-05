@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
+import java.util.Objects;
 
 /**
  * Сервис для работы с картами
@@ -172,14 +172,13 @@ public class CardService implements ICardService {
 
     /**
      * Удаляет карту по её ID. Только для администратора.
+     * (Вообще лучше сделать не жесткое удаление, а архивацию а-ля "мягкое удаление", но тут я решил сделать так)
      *
      * @param cardId ID карты
      * @throws CardNotFoundException выбрасывается, если карта не найдена
-     * @throws AccessDeniedException выбрасывается, если пользователь не имеет доступа
      */
     public void deleteCardById(Long cardId) {
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new CardNotFoundException("Карта с ID " + cardId + " не найдена"));
+        Card card = findCardById(cardId);
 
         cardRepository.delete(card);
     }
@@ -217,12 +216,8 @@ public class CardService implements ICardService {
         String email = extractUserInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
         Card card = findCardById(cardId);
-        try {
-            if (!card.getOwnerUser().getIdUser().equals(user.getIdUser())) {
-                throw new AccessDeniedException("Нельзя запросить блокировку чужой карты");
-            }
-        }catch (AccessDeniedException e) {
-            return "Запрос не прошел. Пользователь не является владельцем карты";
+        if (!Objects.equals(card.getOwnerUser().getIdUser(), user.getIdUser())) {
+            throw new AccessDeniedException("Нельзя запросить блокировку чужой карты");
         }
 
         card.setBlockRequest(true);
@@ -268,12 +263,21 @@ public class CardService implements ICardService {
     /**
      * Возвращает баланс карты с данным ID
      *
+     * @param authHeader заголовок, получаем из запроса
      * @param cardId Id карты
+     * @throws AccessDeniedException выбрасывается, если пользователь не является держателем карты
      * @return BigDecimal значение, баланс карты
      *
      */
-    public BigDecimal getBalance(Long cardId) {
+    public BigDecimal getBalance(String authHeader, Long cardId) {
+        String email = extractUserInfoFromToken(authHeader);
+        User user = userService.getUserByEmail(email);
         Card card = findCardById(cardId);
+
+        if (!Objects.equals(card.getOwnerUser().getIdUser(), user.getIdUser())) {
+            throw new AccessDeniedException("Нельзя запросить баланс чужой карты");
+        }
+
         return card.getBalance();
     }
 
@@ -290,27 +294,39 @@ public class CardService implements ICardService {
      * @throws CrossUserTransferNotAllowedException выбрасывается в случае, когда владельцы счетов различаются
      * @throws SameAccountTransferException выбрасываются в случае, когда счет-получатель и счет-отправитель одинаковые
      * @throws CardBlockedException выбрасывается в случае, когда обе или одна карты заблокированы
+     * @throws AccessDeniedException выбрасывается, если пользователь не является держателем карты
      */
     @Transactional
-    public BigDecimal transferMoney(MoneyTransferDto moneyTransferDTO) {
+    public BigDecimal transferMoney(String authHeader, MoneyTransferDto moneyTransferDTO) {
         Card cardFrom = findCardById(moneyTransferDTO.getCardIdFrom());
         Card cardTo = findCardById(moneyTransferDTO.getCardIdTo());
+        String email = extractUserInfoFromToken(authHeader);
+        User user = userService.getUserByEmail(email);
 
         if(!cardFrom.getOwnerUser().equals(cardTo.getOwnerUser())) {
             throw new CrossUserTransferNotAllowedException("Переводы возможны только между счетами одного пользователя");
         }
+
         if(cardFrom.getBalance().compareTo(moneyTransferDTO.getAmount()) < 0){
             throw new BalanceIsNotEnoughException("На карте не хватает денег для перевода");
         }
-        if(moneyTransferDTO.getAmount().compareTo(BigDecimal.ZERO) < 0 ){
+
+        if(moneyTransferDTO.getAmount().compareTo(BigDecimal.ZERO) <= 0 ){
             throw new InvalidTransferAmountException("Сумма перевода не может быть 0 или меньше 0");
         }
+
         if(cardFrom.equals(cardTo)){
             throw new SameAccountTransferException("Счета для перевода должны различаться!");
         }
+
         if(cardFrom.getStatus() == Status.BLOCKED || cardTo.getStatus() == Status.BLOCKED){
             throw new CardBlockedException("Карты не должны быть заблокированы!");
         }
+
+        if (!Objects.equals(cardFrom.getOwnerUser().getIdUser(), user.getIdUser())) {
+            throw new AccessDeniedException("Нельзя выполнить перевод с чужой карты");
+        }
+
         cardFrom.setBalance(cardFrom.getBalance().subtract(moneyTransferDTO.getAmount()));
         cardTo.setBalance(cardTo.getBalance().add(moneyTransferDTO.getAmount()));
 

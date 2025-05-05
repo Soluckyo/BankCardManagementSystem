@@ -133,8 +133,9 @@ public class CardController {
             summary = "Запрос на блокировку карты",
             description = "Принимает ID карты и ставит флаг запроса блокировки true"
     )
-    @PostMapping("/{cardId}/block-request")
-    public ResponseEntity<String> responseForBlockedCard(@RequestHeader("Authorization") String authHeader, Long cardId) {
+    @PutMapping("/{cardId}/block-request")
+    public ResponseEntity<String> responseForBlockedCard(@RequestHeader("Authorization") String authHeader,
+                                                         @PathVariable Long cardId) {
         return ResponseEntity.ok(cardService.requestForBlockCard(authHeader, cardId));
     }
 
@@ -181,8 +182,9 @@ public class CardController {
             description = "Принимает ID карты из пути и возвращает баланс этой карты"
     )
     @GetMapping("/{cardId}/balance")
-    public ResponseEntity<BigDecimal> getBalance(@PathVariable Long cardId) {
-        return ResponseEntity.ok(cardService.getBalance(cardId));
+    public ResponseEntity<BigDecimal> getBalance(@PathVariable Long cardId,
+                                                 @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(cardService.getBalance(authHeader, cardId));
     }
 
     @ApiResponses(value = {
@@ -197,7 +199,8 @@ public class CardController {
             description = "Принимает MoneyTransferDto и выполняет перевод средств. Счета должны принадлежать одному пользователю!"
     )
     @PutMapping("/transfer")
-    public ResponseEntity<BigDecimal> moneyTransfer(@RequestBody MoneyTransferDto moneyTransferDto) {
-        return ResponseEntity.ok(cardService.transferMoney(moneyTransferDto));
+    public ResponseEntity<BigDecimal> moneyTransfer(@RequestBody MoneyTransferDto moneyTransferDto,
+                                                    @RequestHeader("Authorization") String authHeader) {
+        return ResponseEntity.ok(cardService.transferMoney(authHeader, moneyTransferDto));
     }
 }
