@@ -7,17 +7,23 @@ import org.lib.bankcardmanagementsystem.entity.Card;
 import org.lib.bankcardmanagementsystem.entity.Status;
 import org.lib.bankcardmanagementsystem.entity.User;
 import org.lib.bankcardmanagementsystem.exception.BalanceIsNotEnoughException;
+import org.lib.bankcardmanagementsystem.exception.CardBlockedException;
 import org.lib.bankcardmanagementsystem.exception.CardCreationException;
 import org.lib.bankcardmanagementsystem.exception.CardNotFoundException;
 import org.lib.bankcardmanagementsystem.exception.CrossUserTransferNotAllowedException;
+import org.lib.bankcardmanagementsystem.exception.InvalidAccessTokenException;
+import org.lib.bankcardmanagementsystem.exception.InvalidAuthHeaderException;
 import org.lib.bankcardmanagementsystem.exception.InvalidTransferAmountException;
 import org.lib.bankcardmanagementsystem.exception.SameAccountTransferException;
 import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
+import org.lib.bankcardmanagementsystem.mapper.CardMapper;
 import org.lib.bankcardmanagementsystem.repository.CardRepository;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,6 +36,7 @@ import java.time.LocalDate;
 public class CardService implements ICardService {
 
     private final UserRepository userRepository;
+    private final JwtService jwtService;
     /**
      *  Срок действия карты в годах
      *  Значение загружается из application.properties по ключу `card.expiry.year`.
@@ -48,11 +55,12 @@ public class CardService implements ICardService {
     private final CardNumberGenerator cardNumberGenerator;
     private final UserService userService;
 
-    public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator, UserService userService, UserRepository userRepository) {
+    public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator, UserService userService, UserRepository userRepository, JwtService jwtService) {
         this.cardRepository = cardRepository;
         this.cardNumberGenerator = cardNumberGenerator;
         this.userService = userService;
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -62,31 +70,49 @@ public class CardService implements ICardService {
      * @return страница с картами
      * @throws CardNotFoundException выбрасывается, если карты не найдены
      */
-    public Page<Card> getAllCards(Pageable pageable) {
+    public Page<CardDto> getAllCards(Pageable pageable) {
         Page<Card> cards = cardRepository.findAll(pageable);
         if(cards.isEmpty()) {
             throw new CardNotFoundException("Карты не найдены");
         }
-        return cards;
+        return cards.map(CardMapper::toCardDto);
     }
 
     /**
-     * Возвращает все карты, принадлежащие одному пользователю
+     * Возвращает все карты, принадлежащие одному пользователю.
+     * Берет токен из заголовка, достает из токена email
+     * и отдает все карты принадлежащие пользователю с этим email
      *
-     * @param userId ID пользователя, чьи карты будут возвращены
+     * @param authHeader auth заголовок из которого будет взят токен
      * @param pageable параметры страницы
      * @throws CardNotFoundException выбрасывается, если карты не найдены
+     * @throws InvalidAuthHeaderException выбрасывается, если заголовок авторизации не содержит токен
+     * @throws InvalidAccessTokenException выбрасывается, если токен валидируется
      * @return страница с картами
      */
-    public Page<Card> getAllCardsByOwnerId(Long userId,Pageable pageable) {
-        if(userRepository.findById(userId).isEmpty()) {
-            throw new UserNotFoundException("Пользователь не найден");
+    public Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable) {
+        if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new InvalidAuthHeaderException("Недопустимый заголовок авторизации!");
         }
-        Page<Card> cards = cardRepository.findAllByOwnerUser_IdUser(userId ,pageable);
+
+        String token = authHeader.substring(7);
+
+        if(jwtService.validateToken(token)) {
+            throw new InvalidAccessTokenException("Недействительный или просроченный токен");
+        }
+
+        String email = jwtService.getEmailFromToken(token);
+
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new UserNotFoundException("Пользователь не найден"));
+
+        Page<Card> cards = cardRepository.findAllByOwnerUser_IdUser(user.getIdUser() ,pageable);
+
         if(cards.isEmpty()) {
             throw new CardNotFoundException("Карты не найдены");
         }
-        return cards;
+
+        return cards.map(CardMapper::toCardDto);
     }
 
     /**
@@ -131,13 +157,9 @@ public class CardService implements ICardService {
 
             cardRepository.save(card);
 
-            return CardDto.builder()
-                    .maskedCardNumber(card.getMaskedCardNumber())
-                    .expiryDate(card.getExpiryDate().toString())
-                    .ownerId(card.getOwnerUser().getIdUser())
-                    .status(card.getStatus().toString())
-                    .build();
+            return CardMapper.toCardDto(card);
         }catch (Exception e) {
+            e.printStackTrace();
             throw new CardCreationException("Ошибка при создании карты");
         }
     }
@@ -155,17 +177,12 @@ public class CardService implements ICardService {
      */
     public CardDto blockedCard(Long cardId) {
         Card card = findCardById(cardId);
-        if(card.getStatus() == Status.BLOCKED) {
-            throw new IllegalStateException("Карта уже заблокирована");
+        if(card.getStatus() == Status.BLOCKED){
+            throw new IllegalArgumentException("Карта уже заблокирована");
         }
         card.setStatus(Status.BLOCKED);
         cardRepository.save(card);
-        return CardDto.builder()
-                .maskedCardNumber(card.getMaskedCardNumber())
-                .expiryDate(card.getExpiryDate().toString())
-                .status(card.getStatus().toString())
-                .ownerId(card.getOwnerUser().getIdUser())
-                .build();
+        return CardMapper.toCardDto(card);
     }
 
     /**
@@ -186,12 +203,7 @@ public class CardService implements ICardService {
         }
         card.setStatus(Status.ACTIVE);
         cardRepository.save(card);
-        return CardDto.builder()
-                .maskedCardNumber(card.getMaskedCardNumber())
-                .expiryDate(card.getExpiryDate().toString())
-                .status(card.getStatus().toString())
-                .ownerId(card.getOwnerUser().getIdUser())
-                .build();
+        return CardMapper.toCardDto(card);
     }
 
     /**
@@ -218,6 +230,7 @@ public class CardService implements ICardService {
      * @throws InvalidTransferAmountException выбрасывается в случае, когда сумма перевода меньше или равна 0
      * @throws CrossUserTransferNotAllowedException выбрасывается в случае, когда владельцы счетов различаются
      * @throws SameAccountTransferException выбрасываются в случае, когда счет-получатель и счет-отправитель одинаковые
+     * @throws CardBlockedException выбрасывается в случае, когда обе или одна карты заблокированы
      */
     @Transactional
     public BigDecimal transferMoney(MoneyTransferDto moneyTransferDTO) {
@@ -235,6 +248,9 @@ public class CardService implements ICardService {
         }
         if(cardFrom.equals(cardTo)){
             throw new SameAccountTransferException("Счета для перевода должны различаться!");
+        }
+        if(cardFrom.getStatus() == Status.BLOCKED || cardTo.getStatus() == Status.BLOCKED){
+            throw new CardBlockedException("Карты не должны быть заблокированы!");
         }
         cardFrom.setBalance(cardFrom.getBalance().subtract(moneyTransferDTO.getAmount()));
         cardTo.setBalance(cardTo.getBalance().add(moneyTransferDTO.getAmount()));

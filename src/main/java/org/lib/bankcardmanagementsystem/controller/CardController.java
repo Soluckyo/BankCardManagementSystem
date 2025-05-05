@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,7 +46,7 @@ public class CardController {
     )
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/only-admin")
-    public ResponseEntity<Page<Card>> getAllCards(@RequestParam(defaultValue = "0") int page,
+    public ResponseEntity<Page<CardDto>> getAllCards(@RequestParam(defaultValue = "0") int page,
                                                   @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok().body(cardService.getAllCards(pageable));
@@ -54,19 +55,21 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Карты или пользователь не найдены"),
             @ApiResponse(responseCode = "200", description = "Карты успешно найдены"),
-            @ApiResponse(responseCode = "403", description = "Доступ запрещён")
+            @ApiResponse(responseCode = "403", description = "Доступ запрещён"),
+            @ApiResponse(responseCode = "401", description = "Доступ запрещён, токен отсутствует или не валиден")
     })
     @Operation(
             summary = "Получение всех карт пользователя",
-            description = "Принимает ID пользователя из пути и возвращает все принадлежащие ему карты"
+            description = "Берет AuthHeader из запроса устанавливает " +
+                    "через токен пользователя и возвращает все принадлежащие ему карты"
     )
-    @GetMapping("/{ownerId}/all")
-    public ResponseEntity<Page<Card>> getAllCardsByOwnerId(
-            @PathVariable Long ownerId,
+    @GetMapping("/all")
+    public ResponseEntity<Page<CardDto>> getAllCardsByOwnerId(
+            @RequestHeader String authHeader,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok().body(cardService.getAllCardsByOwnerId(ownerId, pageable));
+        return ResponseEntity.ok().body(cardService.getAllCardsByOwnerId(authHeader, pageable));
     }
 
     @ApiResponses(value = {

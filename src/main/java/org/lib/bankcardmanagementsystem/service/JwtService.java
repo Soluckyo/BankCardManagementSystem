@@ -94,7 +94,9 @@ public class JwtService implements IJwtService{
      */
     public Boolean validateToken(String token) {
         try {
+            log.debug("Trying to validate token: {}", token);
             claimsToken(token);
+            log.debug("Trying to validate token: {}", token);
             return true;
         }catch (ExpiredJwtException expEx) {
             log.error("Token expired", expEx);
@@ -109,9 +111,10 @@ public class JwtService implements IJwtService{
             log.error("Invalid signature", sEx);
             return false;
         } catch (Exception e) {
-            log.error("invalid token", e);
+            log.error("Invalid token", e);
             return false;
-        }    }
+        }
+    }
 
     /**
      * Достает Claims из токена доступа

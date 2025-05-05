@@ -3,6 +3,7 @@ package org.lib.bankcardmanagementsystem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.lib.bankcardmanagementsystem.dto.RefreshTokenDTO;
 import org.lib.bankcardmanagementsystem.dto.RegisterRequestDto;
 import org.lib.bankcardmanagementsystem.dto.TokenRequestDto;
 import org.lib.bankcardmanagementsystem.dto.TokenResponseDto;
@@ -40,9 +41,9 @@ public class AuthController {
             description = "обновляет AccessToken на основе refreshToken'a "
     )
     @PostMapping("/refresh")
-    public ResponseEntity<TokenResponseDto> refresh(@RequestBody String refreshToken) {
+    public ResponseEntity<TokenResponseDto> refresh(@RequestBody RefreshTokenDTO refreshToken) {
         try {
-            TokenResponseDto jwtResponseDTO = authService.refreshAccessToken(refreshToken);
+            TokenResponseDto jwtResponseDTO = authService.refreshAccessToken(refreshToken.getRefreshToken());
             return ResponseEntity.ok(jwtResponseDTO);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();

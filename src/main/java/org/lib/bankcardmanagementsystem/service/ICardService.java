@@ -9,8 +9,8 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 
 public interface ICardService {
-    Page<Card> getAllCards(Pageable pageable);
-    Page<Card> getAllCardsByOwnerId(Long userId,Pageable pageable);
+    Page<CardDto> getAllCards(Pageable pageable);
+    Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable);
     CardDto createCard(Long userId);
     CardDto blockedCard(Long cardId);
     CardDto activateCard(Long cardId);

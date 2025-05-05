@@ -1,17 +1,17 @@
 package org.lib.bankcardmanagementsystem.dto;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Getter
 @Setter
-@Builder
 public class CardDto {
+    private Long cardId;
     private String maskedCardNumber;
     private String status;
     private String expiryDate;
+    private BigDecimal balance;
     private Long ownerId;
 }

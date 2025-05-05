@@ -1,10 +1,12 @@
 package org.lib.bankcardmanagementsystem.service;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -68,9 +70,11 @@ public class CardNumberGenerator {
      * @throws RuntimeException выбрасывается в случае ошибки шифрования карты
      */
     public String encryptedNumberCard(String cardNumber) {
+        byte[] keyBytes = SECRET_KEY.getBytes(StandardCharsets.UTF_8);
+        System.out.println("Key length: " + keyBytes.length); // Проверяем длину ключа
         try{
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
-            SecretKeySpec key = new SecretKeySpec(SECRET_KEY.getBytes(), ALGORITHM);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            SecretKeySpec key = new SecretKeySpec(SECRET_KEY.getBytes(), "AES");
             cipher.init(Cipher.ENCRYPT_MODE, key);
             byte[] encrypted = cipher.doFinal(cardNumber.getBytes());
             return Base64.getEncoder().encodeToString(encrypted);
