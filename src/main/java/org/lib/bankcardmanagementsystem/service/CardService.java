@@ -15,19 +15,18 @@ import org.lib.bankcardmanagementsystem.exception.InvalidAccessTokenException;
 import org.lib.bankcardmanagementsystem.exception.InvalidAuthHeaderException;
 import org.lib.bankcardmanagementsystem.exception.InvalidTransferAmountException;
 import org.lib.bankcardmanagementsystem.exception.SameAccountTransferException;
-import org.lib.bankcardmanagementsystem.exception.UserNotFoundException;
 import org.lib.bankcardmanagementsystem.mapper.CardMapper;
 import org.lib.bankcardmanagementsystem.repository.CardRepository;
 import org.lib.bankcardmanagementsystem.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Сервис для работы с картами
@@ -80,17 +79,34 @@ public class CardService implements ICardService {
 
     /**
      * Возвращает все карты, принадлежащие одному пользователю.
-     * Берет токен из заголовка, достает из токена email
-     * и отдает все карты принадлежащие пользователю с этим email
      *
-     * @param authHeader auth заголовок из которого будет взят токен
      * @param pageable параметры страницы
      * @throws CardNotFoundException выбрасывается, если карты не найдены
-     * @throws InvalidAuthHeaderException выбрасывается, если заголовок авторизации не содержит токен
-     * @throws InvalidAccessTokenException выбрасывается, если токен валидируется
      * @return страница с картами
      */
-    public Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable) {
+    public Page<CardDto> getAllCardsByOwnerId(String AuthHeader, Pageable pageable) {
+        String email = extractUserInfoFromToken(AuthHeader);
+        User user = userService.getUserByEmail(email);
+
+        Page<Card> cards = cardRepository.findAllByOwnerUser_IdUser(user.getIdUser() ,pageable);
+
+        if(cards.isEmpty()) {
+            throw new CardNotFoundException("Карты не найдены");
+        }
+
+        return cards.map(CardMapper::toCardDto);
+    }
+
+    /**
+     * Берет токен из заголовка, достает из токена email и возвращает его
+     *
+     *
+     * @param authHeader auth заголовок из которого будет взят токен
+     * @throws InvalidAuthHeaderException выбрасывается, если заголовок авторизации не содержит токен
+     * @throws InvalidAccessTokenException выбрасывается, если токен валидируется
+     * @return строку с email
+     */
+    public String extractUserInfoFromToken(String authHeader){
         if(authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new InvalidAuthHeaderException("Недопустимый заголовок авторизации!");
         }
@@ -101,18 +117,7 @@ public class CardService implements ICardService {
             throw new InvalidAccessTokenException("Недействительный или просроченный токен");
         }
 
-        String email = jwtService.getEmailFromToken(token);
-
-        User user = userRepository.findByEmail(email).orElseThrow(
-                () -> new UserNotFoundException("Пользователь не найден"));
-
-        Page<Card> cards = cardRepository.findAllByOwnerUser_IdUser(user.getIdUser() ,pageable);
-
-        if(cards.isEmpty()) {
-            throw new CardNotFoundException("Карты не найдены");
-        }
-
-        return cards.map(CardMapper::toCardDto);
+         return jwtService.getEmailFromToken(token);
     }
 
     /**
@@ -181,9 +186,48 @@ public class CardService implements ICardService {
             throw new IllegalArgumentException("Карта уже заблокирована");
         }
         card.setStatus(Status.BLOCKED);
+        card.setBlockRequest(false);
         cardRepository.save(card);
         return CardMapper.toCardDto(card);
     }
+
+    /**
+     *
+     *
+     * @param authHeader заголовок запроса
+     * @param cardId ID карты, которую необходимо заблокировать
+     * @return строка
+     */
+    public String requestForBlockCard(String authHeader, Long cardId) {
+        String email = extractUserInfoFromToken(authHeader);
+        User user = userService.getUserByEmail(email);
+        Card card = findCardById(cardId);
+        try {
+            if (!card.getOwnerUser().getIdUser().equals(user.getIdUser())) {
+                throw new AccessDeniedException("Нельзя запросить блокировку чужой карты");
+            }
+        }catch (AccessDeniedException e) {
+            return "Запрос не прошел. Пользователь не является владельцем карты";
+        }
+
+        card.setBlockRequest(true);
+        cardRepository.save(card);
+        return "Запрос на блокировку карты отправлен";
+    }
+
+    /**
+     * Возвращает все карты, которые необходимо заблокировать
+     *
+     *
+     * @param pageable параметры страницы
+     * @return Страница с DTO карт
+     */
+    public Page<CardDto> findRequestCardBlock(Pageable pageable) {
+        Page<Card> cards = cardRepository.findByBlockRequest(true, pageable);
+        return cards.map(CardMapper::toCardDto);
+    }
+
+
 
     /**
      * Активирует заблокированную карту

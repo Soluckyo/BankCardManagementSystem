@@ -16,4 +16,6 @@ public interface ICardService {
     CardDto activateCard(Long cardId);
     BigDecimal getBalance(Long cardId);
     BigDecimal transferMoney(MoneyTransferDto moneyTransferDTO);
+    String requestForBlockCard(String authHeader, Long cardId);
+    Page<CardDto> findRequestCardBlock(Pageable pageable);
 }

@@ -68,4 +68,9 @@ public class Card {
      * Баланс карты
      */
     private BigDecimal balance;
+
+    /**
+     * Запрос на блокировку карты
+     */
+    private Boolean blockRequest = false;
 }
