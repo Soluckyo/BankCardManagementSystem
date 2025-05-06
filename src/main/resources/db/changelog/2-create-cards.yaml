@@ -1,0 +1,39 @@
+databaseChangeLog:
+  - changeSet: 
+      id: 2
+      author: soluckyo
+      changes:
+        - createTable:
+            tableName: card
+            columns:
+              - column:
+                  name: id_card
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: encrypted_card_number
+                  type: VARCHAR(255)
+              - column:
+                  name: masked_card_number
+                  type: VARCHAR(255)
+              - column:
+                  name: expiry_date
+                  type: DATE
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+              - column:
+                  name: balance
+                  type: NUMERIC(19, 2)
+              - column:
+                  name: block_request
+                  type: BOOLEAN
+              - column:
+                  name: owner_user_id_user
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_card_user
+                    references: users(id_user)
