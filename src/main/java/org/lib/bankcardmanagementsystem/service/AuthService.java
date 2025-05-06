@@ -19,11 +19,13 @@ public class AuthService implements IAuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final IJwtService jwtService;
+    private final UserService userService;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, IJwtService jwtService) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, IJwtService jwtService, UserService userService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     /**
@@ -55,7 +57,7 @@ public class AuthService implements IAuthService {
      */
     public TokenResponseDto refreshAccessToken(String refreshToken) throws AuthenticationException {
         if(refreshToken != null && jwtService.validateToken(refreshToken)){
-            User user = findByEmail(jwtService.getEmailFromToken(refreshToken));
+            User user = userService.getUserByEmail(jwtService.getEmailFromToken(refreshToken));
             return jwtService.refreshAccessToken(user, refreshToken);
         }else {
             throw new AuthenticationException("Невалидный refresh токен");
@@ -81,23 +83,11 @@ public class AuthService implements IAuthService {
      * @throws BadCredentialsException выбрасывается, если пароль не валидируется с сохраненным паролем
      */
     private User findByCredentials(TokenRequestDto tokenRequestDto){
-        User user = findByEmail(tokenRequestDto.getEmail());
+        User user = userService.getUserByEmail(tokenRequestDto.getEmail());
         if(!passwordEncoder.matches(tokenRequestDto.getPassword(), user.getPassword())) {
             throw new BadCredentialsException("Невалидный пароль");
         }else {
             return user;
         }
-    }
-
-    /**
-     * Возвращает пользователя по email
-     *
-     * @param email почта пользователя
-     * @return пользователь
-     * @throws UserNotFoundException выбрасывается, если пользователь не найден
-     */
-    private User findByEmail(String email){
-        return userRepository.findByEmail(email).orElseThrow(
-                ()-> new UserNotFoundException(String.format("Пользователь с Email %s не найден", email)));
     }
 }

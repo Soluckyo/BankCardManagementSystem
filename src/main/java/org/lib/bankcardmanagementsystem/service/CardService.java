@@ -42,26 +42,28 @@ public class CardService implements ICardService {
      *  Срок действия карты в годах
      *  Значение загружается из application.properties по ключу `card.expiry.year`.
      */
-    @Value("${card.expiry.year}")
-    private Long CARD_EXPIRY_YEAR;
+    private final Long CARD_EXPIRY_YEAR;
 
     /**
      *  Стартовый баланс карты при создании
      *  Значение загружается из application.properties по ключу `card.start.balance`.
      */
-    @Value("${card.start.balance}")
-    private BigDecimal START_BALANCE;
-
+    private final BigDecimal START_BALANCE;
     private final CardRepository cardRepository;
     private final CardNumberGenerator cardNumberGenerator;
     private final UserService userService;
 
-    public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator, UserService userService, UserRepository userRepository, JwtService jwtService) {
+    public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator,
+                       UserService userService, UserRepository userRepository, JwtService jwtService,
+                       @Value("${bankcard.start-balance}") BigDecimal startBalance,
+                       @Value("${bankcard.expiry-year}") Long expiryYear) {
         this.cardRepository = cardRepository;
         this.cardNumberGenerator = cardNumberGenerator;
         this.userService = userService;
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.CARD_EXPIRY_YEAR = expiryYear;
+        this.START_BALANCE = startBalance;
     }
 
     /**
@@ -85,7 +87,7 @@ public class CardService implements ICardService {
      * @return страница с картами
      */
     public Page<CardDto> getAllCardsByOwnerId(String authHeader, Pageable pageable, BigDecimal minBalance, Status status) {
-        String email = extractUserInfoFromToken(authHeader);
+        String email = extractEmailInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
 
         Specification<Card> spec = Specification
@@ -107,7 +109,7 @@ public class CardService implements ICardService {
      * @throws InvalidAccessTokenException выбрасывается, если токен валидируется
      * @return строку с email
      */
-    public String extractUserInfoFromToken(String authHeader){
+    public String extractEmailInfoFromToken(String authHeader){
         if(authHeader == null || !authHeader.startsWith("Bearer ")) {
             throw new InvalidAuthHeaderException("Недопустимый заголовок авторизации!");
         }
@@ -118,7 +120,7 @@ public class CardService implements ICardService {
             throw new InvalidAccessTokenException("Недействительный или просроченный токен");
         }
 
-         return jwtService.getEmailFromToken(token);
+        return jwtService.getEmailFromToken(token);
     }
 
     /**
@@ -213,7 +215,7 @@ public class CardService implements ICardService {
      * @return строка
      */
     public String requestForBlockCard(String authHeader, Long cardId) {
-        String email = extractUserInfoFromToken(authHeader);
+        String email = extractEmailInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
         Card card = findCardById(cardId);
         if (!Objects.equals(card.getOwnerUser().getIdUser(), user.getIdUser())) {
@@ -270,7 +272,7 @@ public class CardService implements ICardService {
      *
      */
     public BigDecimal getBalance(String authHeader, Long cardId) {
-        String email = extractUserInfoFromToken(authHeader);
+        String email = extractEmailInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
         Card card = findCardById(cardId);
 
@@ -300,7 +302,7 @@ public class CardService implements ICardService {
     public BigDecimal transferMoney(String authHeader, MoneyTransferDto moneyTransferDTO) {
         Card cardFrom = findCardById(moneyTransferDTO.getCardIdFrom());
         Card cardTo = findCardById(moneyTransferDTO.getCardIdTo());
-        String email = extractUserInfoFromToken(authHeader);
+        String email = extractEmailInfoFromToken(authHeader);
         User user = userService.getUserByEmail(email);
 
         if(!cardFrom.getOwnerUser().equals(cardTo.getOwnerUser())) {

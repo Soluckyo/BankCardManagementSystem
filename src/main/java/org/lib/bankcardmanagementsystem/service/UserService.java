@@ -30,6 +30,13 @@ public class UserService implements IUserService {
                 .orElseThrow(() -> new UserNotFoundException("Такой пользователь не найден!"));
     }
 
+    /**
+     * Метод возвращает пользователя по ID
+     *
+     * @return пользователь с заданным ID
+     * @param email строка, имя пользователя
+     * @throws UserNotFoundException выбрасывается, если пользователь с таким email не найден
+     */
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("Такой пользователь не найден!"));
