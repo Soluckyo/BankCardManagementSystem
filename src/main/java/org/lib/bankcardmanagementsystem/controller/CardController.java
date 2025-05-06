@@ -3,6 +3,7 @@ package org.lib.bankcardmanagementsystem.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.lib.bankcardmanagementsystem.dto.CardDto;
 import org.lib.bankcardmanagementsystem.dto.MoneyTransferDto;
 import org.lib.bankcardmanagementsystem.entity.Status;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 
+@Tag(name = "card-controller")
 @RestController
 @RequestMapping("/card")
 public class CardController {
