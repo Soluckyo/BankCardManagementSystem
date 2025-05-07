@@ -55,8 +55,8 @@ public class CardService implements ICardService {
 
     public CardService(CardRepository cardRepository, CardNumberGenerator cardNumberGenerator,
                        UserService userService, UserRepository userRepository, JwtService jwtService,
-                       @Value("${bankcard.start-balance}") BigDecimal startBalance,
-                       @Value("${bankcard.expiry-year}") Long expiryYear) {
+                       @Value("${card.start.balance}") BigDecimal startBalance,
+                       @Value("${card.expiry.year}") Long expiryYear) {
         this.cardRepository = cardRepository;
         this.cardNumberGenerator = cardNumberGenerator;
         this.userService = userService;

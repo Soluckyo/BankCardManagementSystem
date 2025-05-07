@@ -26,8 +26,8 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name = "users")
 @Builder
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -37,35 +37,38 @@ public class User {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_user")
     private Long idUser;
 
     /**
      * Имя пользователя.
      */
+    @Column(name = "first_name")
     private String firstName;
 
     /**
      * Фамилия пользователя.
      */
+    @Column(name = "last_name")
     private String lastName;
 
     /**
      * Почта пользователя.
      */
-    @Column(unique = true, nullable = false)
+    @Column(name = "email",unique = true, nullable = false)
     private String email;
 
     /**
      * Пароль пользователя.
      */
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
     /**
      * Роль пользователя.
      */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role;
 
     /**

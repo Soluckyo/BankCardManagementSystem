@@ -31,7 +31,7 @@ databaseChangeLog:
                   name: block_request
                   type: BOOLEAN
               - column:
-                  name: owner_user_id_user
+                  name: owner_user_id
                   type: BIGINT
                   constraints:
                     nullable: false
