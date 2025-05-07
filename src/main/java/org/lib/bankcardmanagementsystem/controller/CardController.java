@@ -41,7 +41,7 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Карты не найдены"),
             @ApiResponse(responseCode = "200", description = "Карты успешно найдены"),
-            @ApiResponse(responseCode = "403", description = "Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа")
     })
     @Operation(
             summary = "Получение всех карт",
@@ -81,7 +81,7 @@ public class CardController {
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Карта успешно создана"),
-            @ApiResponse(responseCode = "403", description = "Только для администратора!"),
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!"),
             @ApiResponse(responseCode = "404", description = "Пользователь не найден"),
             @ApiResponse(responseCode = "400", description = "Ошибка создания карты")
     })
@@ -102,7 +102,7 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Карта успешно удалена"),
             @ApiResponse(responseCode = "404", description = "Карта не найдена"),
-            @ApiResponse(responseCode = "403", description = "Доступ запрещён"),
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!"),
             @ApiResponse(responseCode = "401", description = "Токен отсутствует или недействителен")
     })
     @PreAuthorize("hasRole('ADMIN')")
@@ -115,7 +115,7 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Карта не найдена"),
             @ApiResponse(responseCode = "200", description = "Карта успешно заблокирована"),
-            @ApiResponse(responseCode = "403", description = "Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Блокировка карты",
@@ -144,7 +144,7 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Карта не найдена"),
             @ApiResponse(responseCode = "200", description = "Карта успешно заблокирована"),
-            @ApiResponse(responseCode = "403", description = "Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Блокировка карты",
@@ -162,7 +162,7 @@ public class CardController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Карта не найдена"),
             @ApiResponse(responseCode = "200", description = "Карта успешно активирована"),
-            @ApiResponse(responseCode = "403", description = "Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Активация карты",

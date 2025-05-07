@@ -36,7 +36,7 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Пользователи не найдены"),
             @ApiResponse(responseCode = "200", description = "Пользователи успешно найдены"),
-            @ApiResponse(responseCode = "403", description = "Вы не являетесь администратором. Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Получение всех пользователей",
@@ -55,7 +55,7 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Пользователь не найден"),
             @ApiResponse(responseCode = "200", description = "Пользователь успешно найден"),
-            @ApiResponse(responseCode = "403", description = "Вы не являетесь администратором. Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Получение пользователя по ID",
@@ -72,7 +72,7 @@ public class UserController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "404", description = "Пользователь не найден"),
             @ApiResponse(responseCode = "200", description = "Пользователь успешно удален"),
-            @ApiResponse(responseCode = "403", description = "Вы не являетесь администратором. Доступ к методу только у администратора!")
+            @ApiResponse(responseCode = "403", description = "Не хватает прав доступа!")
     })
     @Operation(
             summary = "Удаление пользователя по ID",

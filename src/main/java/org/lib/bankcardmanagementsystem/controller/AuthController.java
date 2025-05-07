@@ -1,6 +1,8 @@
 package org.lib.bankcardmanagementsystem.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.lib.bankcardmanagementsystem.dto.RefreshTokenDTO;
@@ -26,6 +28,11 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден"),
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно удален"),
+            @ApiResponse(responseCode = "409", description = "Пароль введен не верно!")
+    })
     @Operation(
             summary = "Войти в систему",
             description = "Аутентифицирует пользователя"
@@ -36,6 +43,10 @@ public class AuthController {
         return ResponseEntity.ok(tokenResponseDto);
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Невалидный токен!"),
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно удален"),
+    })
     @Operation(
             summary = "Обновить токен",
             description = "обновляет AccessToken на основе refreshToken'a "
@@ -50,6 +61,10 @@ public class AuthController {
         }
     }
 
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Пользователь успешно удален"),
+            @ApiResponse(responseCode = "409", description = "Почта уже используется!")
+    })
     @Operation(
             summary = "Регистрация пользователя",
             description = "Создает нового пользователя"
