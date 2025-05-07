@@ -31,7 +31,7 @@ public class SwaggerConfig {
                         )
                 )
                 .info(
-                        new Info().title("Task Management System API")
+                        new Info().title("Bank Card Management System API")
                                 .description("Описание API для тестового задания Bank Card Management System")
                                 .version("1.0")
                                 .contact(new Contact().name("Anton Bykov")
